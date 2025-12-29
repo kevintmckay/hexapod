@@ -1,5 +1,7 @@
 # Big Hex - Large Hexapod Robot
 
+![Big Hex Render](big-hex.png)
+
 A larger hexapod build using LX-16A serial bus servos for improved torque, feedback, and simplified wiring.
 
 ## Why LX-16A Servos?
