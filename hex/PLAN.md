@@ -20,8 +20,7 @@
 
 | Part | Qty | Use | Notes |
 |------|-----|-----|-------|
-| Hitec HS-82MG | 6 | Coxa (hip) joints | Metal gear, higher torque for rotation |
-| Tower Pro SG90 | 12 | Femur + tibia joints | Lighter load, adequate torque |
+| Tower Pro SG90 | 18 | All joints (coxa, femur, tibia) | 1.8 kg-cm torque, keep robot lightweight |
 | PCA9685 | 2 | PWM control | 16ch each = 32ch total (18 needed) |
 | SpeedyBee F405 or Arduino | 1 | Main controller | Or use Pi Zero/Pi Pico |
 | 3S Li-Ion (Titan) | 1 | Power | 11.1V, 3.5Ah - good runtime |
@@ -55,7 +54,7 @@
         [BODY]
            |
       +---------+
-      |  COXA   |  <- HS-82MG (horizontal rotation)
+      |  COXA   |  <- SG90 (horizontal rotation)
       +---------+
            |
       +---------+
@@ -220,12 +219,11 @@ def leg_ik(x, y, z, coxa_len, femur_len, tibia_len):
 
 ## Reference Dimensions
 
-Based on SG90/HS-82MG servo sizes:
+Based on SG90 servo size (all 18 servos):
 
 | Servo | Size (mm) | Weight | Torque |
 |-------|-----------|--------|--------|
 | SG90 | 23 x 12 x 29 | 9g | 1.8 kg-cm |
-| HS-82MG | 30 x 12 x 30 | 19g | 3.4 kg-cm |
 
 Suggested link lengths:
 - Coxa: 25mm (short, just clears body)

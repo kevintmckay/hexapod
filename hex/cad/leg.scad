@@ -1,5 +1,5 @@
 // Hexapod Leg - Parametric OpenSCAD Design
-// Designed for SG90 (femur/tibia) and HS-82MG (coxa) servos
+// Designed for SG90 servos (all 18 joints)
 
 /* [Servo Dimensions] */
 // SG90 micro servo
@@ -55,11 +55,11 @@ module shaft_hole(d=7, h=10) {
     cylinder(d=d + clearance*2, h=h, center=true);
 }
 
-// Coxa bracket - mounts HS-82MG for hip rotation
+// Coxa bracket - mounts SG90 for hip rotation
 module coxa_bracket() {
-    bracket_h = hs82_height + wall_thickness * 2;
-    bracket_w = hs82_width + wall_thickness * 2;
-    bracket_l = hs82_length + wall_thickness * 2;
+    bracket_h = sg90_height + wall_thickness * 2;
+    bracket_w = sg90_width + wall_thickness * 2;
+    bracket_l = sg90_length + wall_thickness * 2;
 
     difference() {
         // Outer shell
@@ -67,7 +67,7 @@ module coxa_bracket() {
 
         // Servo pocket
         translate([0, 0, wall_thickness])
-            servo_pocket("hs82");
+            servo_pocket("sg90");
 
         // Shaft hole (top)
         translate([0, 0, bracket_h/2 - 2])

@@ -17,8 +17,7 @@ A 3DOF hexapod walking robot with 18 servos, 3D-printed frame, and Python contro
 
 ## Hardware
 
-- **6x Hitec HS-82MG** - Coxa/hip joints (metal gear, 3.4 kg-cm torque)
-- **12x Tower Pro SG90** - Femur and tibia joints (1.8 kg-cm torque)
+- **18x Tower Pro SG90** - All joints (1.8 kg-cm torque, 9g each)
 - **2x PCA9685** - 16-channel PWM drivers (I2C)
 - **Raspberry Pi Zero 2W** or **Pi Pico** - Main controller
 - **3S Li-Ion battery** - 11.1V, 3.5Ah
