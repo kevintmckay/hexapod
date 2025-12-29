@@ -1,0 +1,9 @@
+| M2 socket head | 6mm | 0 | - | Hexapod |
+| M2 socket head | 8mm | 0 | - | Hexapod |
+| M2 socket head | 10mm | 0 | - | Hexapod |
+| M2 nuts | - | 0 | - | Hexapod |
+| PCA9685 PWM | 2 | Hexapod |
+| Hitec HS-82MG | 7 | Hexapod (coxa) |
+| Tower Pro SG90 | 17 | Hexapod (femur/tibia) |
+| Raspberry Pi Zero 2W | 1 | Hexapod | $15 |
+| BEC | 5V 3A | 0 | Hexapod |
