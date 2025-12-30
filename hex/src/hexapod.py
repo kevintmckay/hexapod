@@ -4,8 +4,7 @@ For Pi Pico (MicroPython) or Pi Zero (CPython)
 
 Hardware:
 - 2x PCA9685 PWM drivers (I2C 0x40, 0x41)
-- 6x HS-82MG servos (coxa joints)
-- 12x SG90 servos (femur + tibia joints)
+- 18x Tower Pro SG90 servos (all joints: coxa, femur, tibia)
 - 3S Li-Ion battery (11.1V) with 5V BEC
 """
 
@@ -76,12 +75,21 @@ def leg_ik(x, y, z, coxa_len=COXA_LENGTH, femur_len=FEMUR_LENGTH, tibia_len=TIBI
     Returns:
         (coxa_angle, femur_angle, tibia_angle) in degrees
         Angles are servo positions (0-180, 90 = center)
+        Returns None if target is completely unreachable.
     """
+    # Handle edge case: target at origin
+    if x == 0 and y == 0:
+        x = 0.1  # Small offset to avoid atan2(0,0)
+
     # Coxa angle (rotation in XY plane)
     coxa_angle = degrees(atan2(y, x))
 
     # Horizontal distance from coxa to foot
     xy_dist = sqrt(x**2 + y**2) - coxa_len
+
+    # Handle case where target is inside coxa length
+    if xy_dist < 0:
+        xy_dist = 1  # Minimum reach
 
     # Direct distance from femur pivot to foot
     foot_dist = sqrt(xy_dist**2 + z**2)
@@ -90,9 +98,11 @@ def leg_ik(x, y, z, coxa_len=COXA_LENGTH, femur_len=FEMUR_LENGTH, tibia_len=TIBI
     max_reach = femur_len + tibia_len
     min_reach = abs(femur_len - tibia_len)
 
+    clamped = False
     if foot_dist > max_reach or foot_dist < min_reach:
         # Out of reach - clamp to nearest valid
         foot_dist = clamp(foot_dist, min_reach + 1, max_reach - 1)
+        clamped = True
 
     # Tibia angle (law of cosines)
     cos_tibia = (femur_len**2 + tibia_len**2 - foot_dist**2) / \
@@ -108,6 +118,14 @@ def leg_ik(x, y, z, coxa_len=COXA_LENGTH, femur_len=FEMUR_LENGTH, tibia_len=TIBI
     coxa_servo = 90 + coxa_angle
     femur_servo = femur_angle
     tibia_servo = 180 - tibia_angle  # Tibia typically inverted
+
+    # Clamp all angles to valid servo range (0-180)
+    coxa_servo = clamp(coxa_servo, 0, 180)
+    femur_servo = clamp(femur_servo, 0, 180)
+    tibia_servo = clamp(tibia_servo, 0, 180)
+
+    if clamped:
+        print(f"Warning: IK target ({x:.1f}, {y:.1f}, {z:.1f}) out of reach, clamped")
 
     return coxa_servo, femur_servo, tibia_servo
 
@@ -221,9 +239,21 @@ class Hexapod:
         self.leg_positions[leg] = (x, y, z)
 
     def stand(self, height=50):
-        """Move to standing position."""
+        """
+        Move to standing position.
+
+        Coordinate System:
+        - Each leg's IK uses a local coordinate frame where:
+          - X axis points outward from the body along the leg's mounting angle
+          - Y axis is perpendicular to X in the horizontal plane
+          - Z axis points up (negative Z = down toward ground)
+        - The LEG_ANGLES define each leg's mounting angle in world frame
+        - We calculate (x, y) in world frame then pass to move_leg()
+        - The IK interprets these as leg-local coordinates
+        """
         for leg in self.servo_map.keys():
-            # Position legs outward based on their angle
+            # Position legs outward based on their mounting angle
+            # This creates a symmetric stance where each leg points outward
             angle_rad = radians(LEG_ANGLES[leg])
             x = 80 * cos(angle_rad)
             y = 80 * sin(angle_rad)
@@ -240,10 +270,12 @@ class Hexapod:
         if self.simulate:
             return
 
-        for pca in self.pca:
-            if pca:
-                for ch in range(16):
-                    pca.set_pwm(ch, 0)
+        # Disable only the channels we're actually using
+        for leg in self.servo_map:
+            for joint in self.servo_map[leg]:
+                pca_idx, channel = self.servo_map[leg][joint]
+                if self.pca[pca_idx]:
+                    self.pca[pca_idx].set_pwm(channel, 0)
 
     def get_leg_position(self, leg):
         """Get current (x, y, z) position of leg."""

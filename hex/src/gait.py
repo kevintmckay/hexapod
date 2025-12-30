@@ -5,6 +5,7 @@ Ported from mithi/hexy (Python 2) to Python 3.
 Provides walking, rotation, and body movement patterns.
 """
 
+import math
 from time import sleep
 
 
@@ -51,6 +52,21 @@ class GaitController:
             x, y, _ = self.hex.leg_positions[leg]
             self.hex.move_leg(leg, x, y, -h)
 
+    def reset_positions(self):
+        """
+        Reset all legs to default stance positions.
+
+        Call periodically to prevent floating-point drift accumulation
+        during extended walking sequences.
+        """
+        from hexapod import LEG_ANGLES
+        for leg in self.hex.leg_positions.keys():
+            # Calculate default stance position for each leg
+            angle_rad = math.radians(LEG_ANGLES[leg])
+            x = self.stance_width * math.cos(angle_rad)
+            y = self.stance_width * math.sin(angle_rad)
+            self.hex.move_leg(leg, x, y, -self.stand_height)
+
     def sit(self, height=20):
         """Lower body to sitting position."""
         self.stand(height)
@@ -83,8 +99,6 @@ class GaitController:
             step_height: How high to lift legs (mm)
             cycle_time: Time for one complete cycle (seconds)
         """
-        import math
-
         # Convert direction to x/y components
         rad = math.radians(direction)
         dx = step_length * math.cos(rad)
@@ -153,8 +167,6 @@ class GaitController:
             step_height: How high to lift legs
             cycle_time: Time for one cycle
         """
-        import math
-
         half_cycle = cycle_time / 2
         rad = math.radians(angle / 2)
 
@@ -169,8 +181,6 @@ class GaitController:
 
     def _rotate_tripod(self, swing_legs, stance_legs, rad, lift_height, t):
         """Execute rotation with one tripod lifted."""
-        import math
-
         # Lift swing legs
         for leg in swing_legs:
             x, y, z = self.hex.leg_positions[leg]
@@ -244,7 +254,6 @@ class GaitController:
         Args:
             angle: Twist angle in degrees (positive=CCW)
         """
-        import math
         rad = math.radians(angle)
         cos_r, sin_r = math.cos(rad), math.sin(rad)
 
@@ -264,6 +273,7 @@ class GaitController:
         Walk using wave gait (one leg at a time).
 
         More stable than tripod but slower. Good for rough terrain.
+        Always maintains 5 legs on ground for maximum stability.
 
         Args:
             direction: Movement direction (0=forward)
@@ -272,8 +282,6 @@ class GaitController:
             step_height: Lift height in mm
             leg_time: Time per leg movement
         """
-        import math
-
         rad = math.radians(direction)
         dx = step_length * math.cos(rad)
         dy = step_length * math.sin(rad)
@@ -281,26 +289,50 @@ class GaitController:
         # Wave sequence: R3, R2, R1, L3, L2, L1
         sequence = ['R3', 'R2', 'R1', 'L3', 'L2', 'L1']
 
+        # Each leg moves forward by step_length over the full cycle
+        # Stance legs push back incrementally (1/6 of step per leg movement)
+        push_dx = dx / 6
+        push_dy = dy / 6
+
         for _ in range(steps):
             for leg in sequence:
-                self._single_leg_step(leg, dx, dy, step_height, leg_time)
+                # Get all other legs (stance legs)
+                stance_legs = [l for l in sequence if l != leg]
 
-            # After full wave, shift all legs back to prepare for next cycle
-            self._shift_all_legs(-dx, -dy, leg_time)
+                # Move swing leg forward while stance legs push back
+                self._single_leg_step(leg, dx, dy, step_height, leg_time,
+                                     stance_legs, push_dx, push_dy)
 
-    def _single_leg_step(self, leg, dx, dy, lift_height, t):
-        """Move single leg forward."""
+    def _single_leg_step(self, leg, dx, dy, lift_height, t,
+                         stance_legs=None, push_dx=0, push_dy=0):
+        """
+        Move single leg forward while stance legs push back.
+
+        Args:
+            leg: Leg to swing forward
+            dx, dy: Total forward movement for swing leg
+            lift_height: How high to lift the leg
+            t: Total time for this step
+            stance_legs: List of legs on the ground (push back)
+            push_dx, push_dy: How much stance legs push back
+        """
         x, y, z = self.hex.leg_positions[leg]
 
-        # Lift
+        # Phase 1: Lift swing leg
         self.hex.move_leg(leg, x, y, z + lift_height)
         sleep(t / 3)
 
-        # Swing forward
+        # Phase 2: Swing leg forward, stance legs push back (moves body forward)
         self.hex.move_leg(leg, x + dx, y + dy, z + lift_height)
+
+        if stance_legs:
+            for stance_leg in stance_legs:
+                sx, sy, sz = self.hex.leg_positions[stance_leg]
+                self.hex.move_leg(stance_leg, sx - push_dx, sy - push_dy, sz)
+
         sleep(t / 3)
 
-        # Plant
+        # Phase 3: Plant swing leg
         self.hex.move_leg(leg, x + dx, y + dy, -self.stand_height)
         sleep(t / 3)
 
@@ -393,23 +425,29 @@ class RippleGait:
         """
         Ripple walk - smoother than wave, more stable than tripod.
         """
-        import math
-
         rad = math.radians(direction)
         dx = step_length * math.cos(rad)
         dy = step_length * math.sin(rad)
 
+        # Shift amount for stance legs (1/6 of step per leg)
+        shift_dx = dx / 6
+        shift_dy = dy / 6
+
         for _ in range(steps):
             for i, leg in enumerate(self.sequence):
-                # Move this leg
-                self._step_leg(leg, dx, dy, step_height, phase_time)
-
-                # Simultaneously shift other legs slightly back
+                # Capture all stance leg positions BEFORE modifying any
+                # This prevents concurrent modification issues
+                stance_positions = {}
                 for other in self.sequence:
                     if other != leg:
-                        x, y, z = self.hex.leg_positions[other]
-                        shift = step_length / 6  # Small shift
-                        self.hex.move_leg(other, x - dx/6, y - dy/6, z)
+                        stance_positions[other] = self.hex.leg_positions[other]
+
+                # Move swing leg
+                self._step_leg(leg, dx, dy, step_height, phase_time)
+
+                # Shift all stance legs using the captured positions
+                for other, (x, y, z) in stance_positions.items():
+                    self.hex.move_leg(other, x - shift_dx, y - shift_dy, z)
 
     def _step_leg(self, leg, dx, dy, lift, t):
         """Single leg step in ripple pattern."""

@@ -2,6 +2,7 @@
 PCA9685 PWM Driver
 
 Works with both MicroPython (Pi Pico) and CPython (Pi Zero/Pi 4).
+Includes I2C error handling with retry logic for reliability on mobile robots.
 """
 
 import time
@@ -30,21 +31,34 @@ LED0_ON_H = 0x07
 LED0_OFF_L = 0x08
 LED0_OFF_H = 0x09
 
+# I2C retry settings
+I2C_RETRIES = 3
+I2C_RETRY_DELAY = 0.01  # 10ms between retries
+
+
+class I2CError(Exception):
+    """Custom exception for I2C communication failures."""
+    pass
+
 
 class PCA9685:
-    """PCA9685 16-channel PWM driver."""
+    """PCA9685 16-channel PWM driver with I2C error handling."""
 
-    def __init__(self, i2c=None, address=0x40, freq=50, simulate=False):
+    def __init__(self, i2c=None, address=0x40, freq=50, simulate=False,
+                 on_error=None):
         """
         Args:
             i2c: I2C bus instance (MicroPython) or bus number (CPython)
             address: I2C address (0x40 default, 0x41 if A0 jumpered)
             freq: PWM frequency in Hz (50 for servos)
             simulate: If True, don't access hardware
+            on_error: Optional callback function(address, error) for error handling
         """
         self.address = address
         self.freq = freq
         self.simulate = simulate or (smbus2 is None and not MICROPYTHON)
+        self.on_error = on_error
+        self._error_count = 0
 
         if self.simulate:
             print(f"PCA9685 @ 0x{address:02X}: Simulation mode")
@@ -59,23 +73,75 @@ class PCA9685:
 
         self._init_device()
 
+    def _handle_error(self, operation, error):
+        """Handle I2C error - log and optionally call callback."""
+        self._error_count += 1
+        msg = f"PCA9685 @ 0x{self.address:02X}: {operation} failed - {error}"
+        print(f"Warning: {msg}")
+        if self.on_error:
+            try:
+                self.on_error(self.address, error)
+            except Exception:
+                pass  # Don't let callback errors propagate
+
     def _write_byte(self, reg, value):
-        """Write single byte to register."""
+        """Write single byte to register with retry logic."""
         if self.simulate:
-            return
-        if MICROPYTHON:
-            self.i2c.writeto_mem(self.address, reg, bytes([value]))
-        else:
-            self.bus.write_byte_data(self.address, reg, value)
+            return True
+
+        for attempt in range(I2C_RETRIES):
+            try:
+                if MICROPYTHON:
+                    self.i2c.writeto_mem(self.address, reg, bytes([value]))
+                else:
+                    self.bus.write_byte_data(self.address, reg, value)
+                return True
+            except (OSError, IOError) as e:
+                if attempt < I2C_RETRIES - 1:
+                    time.sleep(I2C_RETRY_DELAY)
+                else:
+                    self._handle_error(f"write reg 0x{reg:02X}", e)
+                    return False
+        return False
 
     def _read_byte(self, reg):
-        """Read single byte from register."""
+        """Read single byte from register with retry logic."""
         if self.simulate:
             return 0
-        if MICROPYTHON:
-            return self.i2c.readfrom_mem(self.address, reg, 1)[0]
-        else:
-            return self.bus.read_byte_data(self.address, reg)
+
+        for attempt in range(I2C_RETRIES):
+            try:
+                if MICROPYTHON:
+                    return self.i2c.readfrom_mem(self.address, reg, 1)[0]
+                else:
+                    return self.bus.read_byte_data(self.address, reg)
+            except (OSError, IOError) as e:
+                if attempt < I2C_RETRIES - 1:
+                    time.sleep(I2C_RETRY_DELAY)
+                else:
+                    self._handle_error(f"read reg 0x{reg:02X}", e)
+                    return 0
+        return 0
+
+    def _write_block(self, reg, data):
+        """Write multiple bytes to register with retry logic."""
+        if self.simulate:
+            return True
+
+        for attempt in range(I2C_RETRIES):
+            try:
+                if MICROPYTHON:
+                    self.i2c.writeto_mem(self.address, reg, bytes(data))
+                else:
+                    self.bus.write_i2c_block_data(self.address, reg, data)
+                return True
+            except (OSError, IOError) as e:
+                if attempt < I2C_RETRIES - 1:
+                    time.sleep(I2C_RETRY_DELAY)
+                else:
+                    self._handle_error(f"write block reg 0x{reg:02X}", e)
+                    return False
+        return False
 
     def _init_device(self):
         """Initialize the PCA9685."""
@@ -92,8 +158,8 @@ class PCA9685:
 
     def set_frequency(self, freq):
         """Set PWM frequency (24-1526 Hz)."""
-        # prescale = round(25MHz / (4096 * freq)) - 1
-        prescale = int(25000000.0 / (4096.0 * freq) - 0.5)
+        # prescale = round(25MHz / (4096 * freq)) - 1 (per PCA9685 datasheet)
+        prescale = round(25000000.0 / (4096.0 * freq)) - 1
         prescale = max(3, min(255, prescale))
 
         old_mode = self._read_byte(MODE1)
@@ -112,13 +178,16 @@ class PCA9685:
         Args:
             channel: 0-15
             pulse_us: Pulse width in microseconds (0 to disable)
+
+        Returns:
+            True if successful, False if I2C error occurred
         """
         if channel < 0 or channel > 15:
-            return
+            return False
 
         if self.simulate:
             self._pwm_values[channel] = pulse_us
-            return
+            return True
 
         if pulse_us == 0:
             # Full off
@@ -132,14 +201,9 @@ class PCA9685:
             on = 0
 
         reg = LED0_ON_L + 4 * channel
-        if MICROPYTHON:
-            self.i2c.writeto_mem(self.address, reg, bytes([
-                on & 0xFF, on >> 8, off & 0xFF, off >> 8
-            ]))
-        else:
-            self.bus.write_i2c_block_data(self.address, reg, [
-                on & 0xFF, on >> 8, off & 0xFF, off >> 8
-            ])
+        return self._write_block(reg, [
+            on & 0xFF, on >> 8, off & 0xFF, off >> 8
+        ])
 
     def set_angle(self, channel, angle, min_pulse=500, max_pulse=2500):
         """

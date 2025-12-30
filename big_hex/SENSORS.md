@@ -193,8 +193,23 @@ Address    Device
 0x29       VL53L0X Center (default)
 0x30       VL53L0X Left (configured)
 0x31       VL53L0X Right (configured)
-0x40       INA219
+0x44       INA219 (A0 jumper soldered - see note below)
 0x68       MPU6050
+```
+
+**IMPORTANT - INA219 Address Conflict:**
+The INA219 defaults to address 0x40, which conflicts with PCA9685 #1 (servo driver).
+To avoid this conflict, solder the A0 jumper on the INA219 board to change its address to 0x44.
+
+INA219 address options:
+- 0x40: A0=GND, A1=GND (default - conflicts with PCA9685!)
+- 0x41: A0=VS+, A1=GND (conflicts with PCA9685 #2)
+- 0x44: A0=GND, A1=VS+ (recommended)
+- 0x45: A0=VS+, A1=VS+
+
+When initializing the INA219 in Python:
+```python
+ina = adafruit_ina219.INA219(i2c, addr=0x44)
 ```
 
 ## Software Libraries

@@ -87,9 +87,9 @@
 ```
 Controller (Pi Pico / Pi Zero)
     |
-    +-- SDA (GPIO 0) ----+---- PCA9685 #1 (0x40)
+    +-- SDA (GPIO 2) ----+---- PCA9685 #1 (0x40)
     |                    |
-    +-- SCL (GPIO 1) ----+---- PCA9685 #2 (0x41) <- solder A0 jumper
+    +-- SCL (GPIO 3) ----+---- PCA9685 #2 (0x41) <- solder A0 jumper
 ```
 
 ### Servo Channel Mapping

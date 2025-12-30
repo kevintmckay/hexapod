@@ -9,10 +9,14 @@ Usage:
     python calibrate.py [--simulate]
 """
 
+import copy
 import json
 import os
 import sys
 from time import sleep
+
+# Get the directory where this script is located for reliable file paths
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Default calibration values
 DEFAULT_CALIBRATION = {
@@ -48,7 +52,8 @@ DEFAULT_CALIBRATION = {
     },
 }
 
-CONFIG_FILE = 'calibration.json'
+# Use absolute path based on script location for reliable file access
+CONFIG_FILE = os.path.join(_SCRIPT_DIR, 'calibration.json')
 
 
 class CalibrationTool:
@@ -85,7 +90,7 @@ class CalibrationTool:
                 print(f"Warning: Could not load {CONFIG_FILE}: {e}")
 
         print("Using default calibration values")
-        return DEFAULT_CALIBRATION.copy()
+        return copy.deepcopy(DEFAULT_CALIBRATION)
 
     def save_calibration(self):
         """Save calibration to file."""
