@@ -13,8 +13,8 @@ Speed:        0.18 sec/60° (adjustable via software)
 Voltage:      6V - 7.4V DC
 Angle:        0-240° (configurable)
 Resolution:   0.24°
-Size:         40 x 20 x 40.5mm
-Weight:       57g
+Size:         45 x 25 x 36mm (verified)
+Weight:       52-57g
 Gears:        Full metal
 Bearings:     Dual ball bearing
 Protocol:     TTL Serial (half-duplex, 115200 baud default)
@@ -52,15 +52,29 @@ Feedback:     Position, temperature, voltage, load
 
 ## Frame (3D Printed)
 
+### Option A: Segmented Body (standard printers ~220mm bed)
+| Part | Qty | Material | Est. Print Time |
+|------|-----|----------|-----------------|
+| Body plate segment (top) | 6 | PETG | 1.5h each |
+| Body plate segment (bottom) | 6 | PETG | 1.5h each |
+| Coxa bracket | 6 | PETG | 45min each |
+| Femur link (80mm) | 6 | PETG | 40min each |
+| Tibia link (120mm) | 6 | PETG | 30min each |
+| Foot tip | 6 | TPU | 10min each |
+| Standoff (45mm) | 12 | PETG | 5min each |
+| **Total** | | | **~25h** |
+
+### Option B: Full Body (large printers ~300mm+ bed)
 | Part | Qty | Material | Est. Print Time |
 |------|-----|----------|-----------------|
 | Body plate (top) | 1 | PETG | 4h |
 | Body plate (bottom) | 1 | PETG | 4h |
-| Coxa bracket | 6 | PETG | 6h |
-| Femur link | 6 | PETG | 5h |
-| Tibia link | 6 | PETG | 4h |
-| Foot tip | 6 | TPU | 1h |
-| **Total** | | | **~24h** |
+| Coxa bracket | 6 | PETG | 45min each |
+| Femur link (80mm) | 6 | PETG | 40min each |
+| Tibia link (120mm) | 6 | PETG | 30min each |
+| Foot tip | 6 | TPU | 10min each |
+| Standoff (45mm) | 12 | PETG | 5min each |
+| **Total** | | | **~20h** |
 
 ### Print Settings
 - Material: PETG (stronger than PLA)
@@ -68,6 +82,7 @@ Feedback:     Position, temperature, voltage, load
 - Infill: 40% (structural parts)
 - Walls: 4
 - Supports: Yes (for servo pockets)
+- Body segments: bolt together with M3x12 screws
 
 ## Hardware
 
@@ -79,7 +94,7 @@ Feedback:     Position, temperature, voltage, load
 | M3 lock nuts | 20 | Joints |
 | M3 washers | 50 | |
 | Servo horn screws | 18 | Included with servos |
-| Standoffs M3 x 20mm | 8 | Body plate spacing |
+| Standoffs (3D printed) | 12 | Body plate spacing (45mm) |
 | Zip ties | 50 | Cable management |
 | Heat shrink | - | Wire connections |
 

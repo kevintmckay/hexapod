@@ -22,10 +22,11 @@ A larger hexapod build using LX-16A serial bus servos for improved torque, feedb
 | Legs | 6 |
 | DOF per leg | 3 (coxa, femur, tibia) |
 | Total servos | 18x LX-16A |
-| Body size | ~400mm across |
-| Leg reach | ~300mm from body center |
-| Target weight | < 2.5kg |
+| Body size | ~350mm across |
+| Leg reach | ~250mm from body center |
+| Target weight | ~2.4kg |
 | Payload capacity | ~500g |
+| Torque margin | 55% |
 
 ## Servo Details
 
@@ -77,14 +78,14 @@ Pi (UART) --> L1_coxa --> L1_femur --> L1_tibia
 - Clean wiring through leg segments
 - Full feedback on every servo
 
-## Leg Dimensions (scaled up)
+## Leg Dimensions
 
 | Segment | Length | Notes |
 |---------|--------|-------|
 | Coxa | 50mm | Hip rotation |
-| Femur | 100mm | Upper leg |
-| Tibia | 150mm | Lower leg |
-| **Total reach** | **~300mm** | From body center |
+| Femur | 80mm | Upper leg (optimized for torque) |
+| Tibia | 120mm | Lower leg (optimized for torque) |
+| **Total reach** | **~250mm** | From body center |
 
 ## Links
 

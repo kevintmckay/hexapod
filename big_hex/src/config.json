@@ -1,0 +1,27 @@
+{
+  "serial_port": "/dev/serial0",
+  "baud_rate": 115200,
+  "geometry": {
+    "coxa_length": 50,
+    "femur_length": 80,
+    "tibia_length": 120,
+    "body_radius": 175
+  },
+  "servo_ids": {
+    "L1": {"coxa": 1, "femur": 2, "tibia": 3},
+    "L2": {"coxa": 4, "femur": 5, "tibia": 6},
+    "L3": {"coxa": 7, "femur": 8, "tibia": 9},
+    "R1": {"coxa": 10, "femur": 11, "tibia": 12},
+    "R2": {"coxa": 13, "femur": 14, "tibia": 15},
+    "R3": {"coxa": 16, "femur": 17, "tibia": 18}
+  },
+  "servo_directions": {
+    "L1": {"coxa": 1, "femur": 1, "tibia": 1},
+    "L2": {"coxa": 1, "femur": 1, "tibia": 1},
+    "L3": {"coxa": 1, "femur": 1, "tibia": 1},
+    "R1": {"coxa": -1, "femur": -1, "tibia": -1},
+    "R2": {"coxa": -1, "femur": -1, "tibia": -1},
+    "R3": {"coxa": -1, "femur": -1, "tibia": -1}
+  },
+  "calibration": {}
+}

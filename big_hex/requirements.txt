@@ -1,0 +1,4 @@
+# Big Hex - Python Dependencies
+
+# Serial communication with LX-16A servos
+pyserial>=3.5
