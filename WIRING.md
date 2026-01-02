@@ -4,18 +4,19 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         DUAL CONTROLLER ARCHITECTURE                        │
+│                         ESP32 CONTROLLER ARCHITECTURE                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │   ┌─────────────────────┐    UART    ┌─────────────────────┐               │
-│   │    Pi Zero 2W       │◄──────────►│     Pi Pico W       │               │
+│   │    Pi Zero 2W       │◄──────────►│       ESP32         │               │
 │   │   (High-Level)      │            │   (Real-Time)       │               │
+│   │    [OPTIONAL]       │            │                     │               │
 │   │                     │            │                     │               │
-│   │  • WiFi / Web UI    │  Commands  │  • Servo Control    │               │
-│   │  • OpenCV / Camera  │  ───────►  │  • Gait Engine      │               │
-│   │  • Path Planning    │            │  • IMU Processing   │               │
-│   │  • Remote Control   │  Status    │  • I2C Bus Master   │               │
-│   │                     │  ◄───────  │                     │               │
+│   │  • OpenCV / Camera  │  Commands  │  • Servo Control    │               │
+│   │  • Path Planning    │  ───────►  │  • Gait Engine      │               │
+│   │  • Web UI           │            │  • IMU Processing   │               │
+│   │                     │  Status    │  • I2C Bus Master   │               │
+│   │                     │  ◄───────  │  • WiFi / BT        │               │
 │   └─────────────────────┘            └─────────────────────┘               │
 │            │                                   │                            │
 │        [Camera]                          [I2C Bus]                          │
@@ -28,6 +29,8 @@
 │                    └───────────┘        └───────────┘        └───────────┘  │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
+
+Note: Pi Zero 2W is optional. ESP32 can run standalone with WiFi/Bluetooth control.
 ```
 
 ## Physical Layout (Top View)
@@ -123,21 +126,21 @@ Tibia                      │                 Tibia
               │                │                │                │
               ▼                ▼                ▼                ▼
     ┌─────────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐
-    │   PCA9685 #1    │ │  Pi Pico W  │ │ Pi Zero 2W  │ │   PCA9685 #2    │
-    │   V+ = 5V       │ │   VSYS=5V   │ │   5V pin    │ │   V+ = 5V       │
-    │   (addr 0x40)   │ │             │ │             │ │   (addr 0x41)   │
+    │   PCA9685 #1    │ │    ESP32    │ │ Pi Zero 2W  │ │   PCA9685 #2    │
+    │   V+ = 5V       │ │   VIN=5V    │ │   5V pin    │ │   V+ = 5V       │
+    │   (addr 0x40)   │ │             │ │ [OPTIONAL]  │ │   (addr 0x41)   │
     └─────────────────┘ └─────────────┘ └─────────────┘ └─────────────────┘
 ```
 
-## UART Connection (Pico ↔ Zero)
+## UART Connection (ESP32 ↔ Zero) [OPTIONAL]
 
 ```
     ┌─────────────────────────────┐      ┌─────────────────────────────┐
-    │        Pi Zero 2W           │      │         Pi Pico W           │
+    │        Pi Zero 2W           │      │           ESP32             │
     │                             │      │                             │
-    │   GPIO 14 (TXD) ────────────┼──────┼──► GPIO 1 (UART0 RX)        │
+    │   GPIO 14 (TXD) ────────────┼──────┼──► GPIO 16 (UART2 RX)       │
     │                             │      │                             │
-    │   GPIO 15 (RXD) ◄───────────┼──────┼─── GPIO 0 (UART0 TX)        │
+    │   GPIO 15 (RXD) ◄───────────┼──────┼─── GPIO 17 (UART2 TX)       │
     │                             │      │                             │
     │   GND ──────────────────────┼──────┼─── GND                      │
     │                             │      │                             │
@@ -145,32 +148,35 @@ Tibia                      │                 Tibia
 
     Protocol: 115200 baud, 8N1
 
-    Commands (Zero → Pico):
+    Commands (Zero → ESP32):
       "W:100,0\n"     Walk forward 100mm
       "T:45\n"        Turn 45 degrees
       "S\n"           Stop
       "G:tripod\n"    Set gait to tripod
       "H:50\n"        Set height to 50mm
 
-    Status (Pico → Zero):
+    Status (ESP32 → Zero):
       "OK\n"
       "IMU:roll,pitch,yaw\n"
       "ERR:message\n"
+
+    Note: UART is only needed if using Pi Zero for camera/vision.
+    ESP32 can operate standalone via WiFi or Bluetooth.
 ```
 
-## I2C Bus (Pico as Master)
+## I2C Bus (ESP32 as Master)
 
 ```
     ┌─────────────────────────────────────────────────────────────────────┐
-    │                           Pi Pico W                                 │
+    │                             ESP32                                   │
     │                                                                     │
     │   3.3V ─────┬────────────────────────────────────────────────────   │
     │             │                                                       │
     │   GND  ─────┼───┬────────────────────────────────────────────────   │
     │             │   │                                                   │
-    │   GP4  ─────┼───┼───┬────────────────────────────────────────────   │ (I2C0 SDA)
+    │   GPIO21 ───┼───┼───┬────────────────────────────────────────────   │ (I2C SDA)
     │             │   │   │                                               │
-    │   GP5  ─────┼───┼───┼───┬────────────────────────────────────────   │ (I2C0 SCL)
+    │   GPIO22 ───┼───┼───┼───┬────────────────────────────────────────   │ (I2C SCL)
     │             │   │   │   │                                           │
     └─────────────┼───┼───┼───┼───────────────────────────────────────────┘
                   │   │   │   │
@@ -192,11 +198,11 @@ Tibia                      │                 Tibia
 ## VL53L0X Address Configuration
 
 ```
-    Pi Pico W
+    ESP32
     ┌─────────────────────┐
-    │ GP6  ───────────────┼──► VL53L0X #1 XSHUT (front)  → addr 0x29
-    │ GP7  ───────────────┼──► VL53L0X #2 XSHUT (left)   → addr 0x30
-    │ GP8  ───────────────┼──► VL53L0X #3 XSHUT (right)  → addr 0x31
+    │ GPIO25 ─────────────┼──► VL53L0X #1 XSHUT (front)  → addr 0x29
+    │ GPIO26 ─────────────┼──► VL53L0X #2 XSHUT (left)   → addr 0x30
+    │ GPIO27 ─────────────┼──► VL53L0X #3 XSHUT (right)  → addr 0x31
     └─────────────────────┘
 
     Boot sequence:
@@ -327,21 +333,21 @@ Tibia                      │                 Tibia
 │              │                    │                   │          │          │
 │              ▼                    ▼                   ▼          ▼          │
 │       ┌─────────────┐      ┌─────────────┐     ┌──────────┐ ┌──────────┐    │
-│       │ Pi Zero 2W  │ UART │  Pi Pico W  │     │ PCA9685  │ │ PCA9685  │    │
-│       │             │◄────►│             │     │   #1     │ │   #2     │    │
-│       │  • WiFi     │      │  • Servos   │     │  0x40    │ │  0x41    │    │
-│       │  • Camera   │      │  • IMU      │     └────┬─────┘ └────┬─────┘    │
+│       │ Pi Zero 2W  │ UART │    ESP32    │     │ PCA9685  │ │ PCA9685  │    │
+│       │ [OPTIONAL]  │◄────►│             │     │   #1     │ │   #2     │    │
+│       │  • Camera   │      │  • Servos   │     │  0x40    │ │  0x41    │    │
+│       │  • Vision   │      │  • IMU      │     └────┬─────┘ └────┬─────┘    │
 │       │  • Planning │      │  • Sensors  │          │            │          │
-│       └──────┬──────┘      └──────┬──────┘          │            │          │
-│              │                    │                 │            │          │
+│       └──────┬──────┘      │  • WiFi/BT  │          │            │          │
+│              │             └──────┬──────┘          │            │          │
 │         [Camera]            [I2C Bus]               │            │          │
 │         Pi v1.3                   │                 │            │          │
 │                    ┌──────────────┼─────────┐       │            │          │
 │                    │              │         │       │            │          │
 │                    ▼              ▼         ▼       │            │          │
 │               ┌────────┐    ┌────────┐ ┌────────┐   │            │          │
-│               │MPU6050 │    │VL53L0X │ │VL53L0X │   │            │          │
-│               │  IMU   │    │  x3    │ │  ...   │   │            │          │
+│               │MPU6050 │    │VL53L0X │ │INA219  │   │            │          │
+│               │  IMU   │    │  x3    │ │(power) │   │            │          │
 │               └────────┘    └────────┘ └────────┘   │            │          │
 │                                                     │            │          │
 │    ┌────────────────────────────────────────────────┴────────────┘          │
@@ -352,31 +358,31 @@ Tibia                      │                 Tibia
 │  │3x │     │3x │     │3x │     │3x │     │3x │     │3x │                    │
 │  └───┘     └───┘     └───┘     └───┘     └───┘     └───┘                    │
 │                                                                             │
-│  Servos: 12x SG90 + 6x HS-82MG (femur joints)                               │
+│  Servos: 18x SG90 (or mix with HS-82MG for femur joints)                    │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Pin Summary
 
-### Pi Pico W
+### ESP32 (WROOM-32)
 | GPIO | Function | Connected To |
 |------|----------|--------------|
-| GP0 | UART0 TX | Zero GPIO 15 (RXD) |
-| GP1 | UART0 RX | Zero GPIO 14 (TXD) |
-| GP4 | I2C0 SDA | All I2C devices |
-| GP5 | I2C0 SCL | All I2C devices |
-| GP6 | Digital Out | VL53L0X #1 XSHUT |
-| GP7 | Digital Out | VL53L0X #2 XSHUT |
-| GP8 | Digital Out | VL53L0X #3 XSHUT |
-| VSYS | 5V Power | From BEC |
+| GPIO16 | UART2 RX | Zero GPIO 14 (TXD) [optional] |
+| GPIO17 | UART2 TX | Zero GPIO 15 (RXD) [optional] |
+| GPIO21 | I2C SDA | All I2C devices |
+| GPIO22 | I2C SCL | All I2C devices |
+| GPIO25 | Digital Out | VL53L0X #1 XSHUT |
+| GPIO26 | Digital Out | VL53L0X #2 XSHUT |
+| GPIO27 | Digital Out | VL53L0X #3 XSHUT |
+| VIN | 5V Power | From BEC |
 | GND | Ground | Common |
 
-### Pi Zero 2W
+### Pi Zero 2W [OPTIONAL - for camera/vision]
 | GPIO | Function | Connected To |
 |------|----------|--------------|
-| GPIO 14 | UART TXD | Pico GP1 (RX) |
-| GPIO 15 | UART RXD | Pico GP0 (TX) |
+| GPIO 14 | UART TXD | ESP32 GPIO16 (RX) |
+| GPIO 15 | UART RXD | ESP32 GPIO17 (TX) |
 | CSI | Camera | Pi Camera v1.3 |
 | 5V | Power | From BEC |
 | GND | Ground | Common |
@@ -413,15 +419,15 @@ Tibia                      │                 Tibia
 
 ## Notes
 
-- Pico handles all real-time control (servos, IMU, sensors)
-- Zero handles high-level functions (WiFi, camera, planning)
-- UART at 115200 baud for inter-controller communication
+- ESP32 handles all control (servos, IMU, sensors, WiFi, Bluetooth)
+- Pi Zero is optional - only needed for camera/vision features
+- UART at 115200 baud for inter-controller communication (if using Zero)
 - All servos receive 5V power from ESC BEC through PCA9685 V+ terminals
-- I2C uses 3.3V logic (Pico GPIO voltage)
+- I2C uses 3.3V logic (ESP32 GPIO voltage)
 - PCA9685 #2 needs A0 address jumper soldered to use 0x41
 - INA219 needs A0+A1 jumpers soldered to avoid address conflict (0x44)
 - VL53L0X sensors need XSHUT pin sequence to set unique addresses
 - Pi Zero camera uses narrower connector - need special cable
 - Keep servo wires bundled and routed through body to legs
 - Use servo wire extensions (15-20cm) for clean routing
-- HS-82MG on femur joints for higher torque under load
+- ESP32 can be controlled via WiFi web UI or Bluetooth gamepad

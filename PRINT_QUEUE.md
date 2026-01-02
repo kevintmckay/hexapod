@@ -4,10 +4,13 @@ Track print jobs across all robot projects.
 
 ## Queue Status
 
-| # | Project | Part | Material | Time | Status |
-|---|---------|------|----------|------|--------|
-| 1 | hexapod | test_leg (coxa+femur+tibia+foot) | PLA | 2h | PENDING |
-| - | - | - | - | - | - |
+| # | Project | Part | Material | Profile | Time | Status |
+|---|---------|------|----------|---------|------|--------|
+| 1 | hexapod | coxa_bracket (test) | PLA | Light | 20m | READY |
+| 2 | hexapod | femur_link (test) | PLA | Light | 30m | QUEUED |
+| 3 | hexapod | tibia_link (test) | PLA | Light | 15m | QUEUED |
+| 4 | hexapod | foot_tip (test) | TPU | Flexible | 15m | QUEUED |
+| - | - | - | - | - | - | - |
 
 ## Completed Prints
 
@@ -17,7 +20,16 @@ Track print jobs across all robot projects.
 
 ## Print Settings Profiles
 
-### PLA Standard (prototypes)
+### PLA Light (leg parts - optimized for weight)
+```
+Layer: 0.2mm
+Infill: 15%
+Walls: 2
+Speed: 60mm/s
+Temp: 210/60
+```
+
+### PLA Standard (body plates, brackets)
 ```
 Layer: 0.2mm
 Infill: 20%

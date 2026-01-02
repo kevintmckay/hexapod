@@ -25,7 +25,7 @@ coxa_length = 25;
 femur_length = 55;
 tibia_length = 75;
 wall_thickness = 3;
-clearance = 0.3;  // printer tolerance
+clearance = 0.4;  // printer tolerance (increased for MG90S compatibility)
 
 /* [Rendering] */
 $fn = 32;
