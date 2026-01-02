@@ -1,24 +1,79 @@
 # Print Queue
 
-Track print jobs across all robot projects.
+Track print jobs for hexapod robot.
 
-## Queue Status
+## JLC3DP Order
 
-| # | Project | Part | Material | Profile | Time | Status |
-|---|---------|------|----------|---------|------|--------|
-| 1 | hexapod | coxa_bracket (test) | PLA | Light | 20m | READY |
-| 2 | hexapod | femur_link (test) | PLA | Light | 30m | QUEUED |
-| 3 | hexapod | tibia_link (test) | PLA | Light | 15m | QUEUED |
-| 4 | hexapod | foot_tip (test) | TPU | Flexible | 15m | QUEUED |
-| - | - | - | - | - | - | - |
+Ordering from [JLC3DP](https://jlc3dp.com/) - online 3D printing service.
 
-## Completed Prints
+**Quote page:** https://jlc3dp.com/3d-printing-quote
 
-| Date | Project | Part | Material | Time | Notes |
-|------|---------|------|----------|------|-------|
-| - | - | - | - | - | - |
+**STL files:** `hex/cad/stl/`
 
-## Print Settings Profiles
+### Order Details
+
+| Part | File | Qty | Material | Notes |
+|------|------|-----|----------|-------|
+| Coxa bracket | coxa_bracket.stl | 7 | PLA | +1 spare |
+| Femur link | femur_link.stl | 7 | PLA | +1 spare |
+| Tibia link | tibia_link.stl | 7 | PLA | +1 spare |
+| Foot tip | foot_tip.stl | 7 | TPU | +1 spare |
+| Body segment | body_segment.stl | 6 | PLA | |
+| **Total** | | **34** | | |
+
+### Print Settings (specify when ordering)
+
+**PLA parts:**
+- Technology: FDM
+- Infill: 15-20%
+- Layer: 0.2mm
+- Color: Gray (or any)
+
+**TPU parts (foot_tip):**
+- Technology: FDM
+- Material: TPU
+- Infill: 20%
+- Color: Black
+
+### Cost Estimate
+
+| Item | Cost |
+|------|------|
+| PLA parts (27×) | ~$35 |
+| TPU parts (7×) | ~$10 |
+| Shipping | ~$10-15 |
+| **Total** | **~$55-60** |
+
+### Timeline
+
+| Stage | Time |
+|-------|------|
+| Build | 2-5 days |
+| Shipping | 7-14 days |
+| **Total** | **~2-3 weeks** |
+
+### Order Status
+
+- [ ] Upload STL files
+- [ ] Select materials and quantities
+- [ ] Place order
+- [ ] Order shipped
+- [ ] Order received
+- [ ] Verify fit with servo
+
+---
+
+## Part Quantities (Full Robot)
+
+| Part | Per Leg | Legs | Body | Total | +Spare | Order |
+|------|---------|------|------|-------|--------|-------|
+| coxa_bracket | 1 | 6 | - | 6 | +1 | 7 |
+| femur_link | 1 | 6 | - | 6 | +1 | 7 |
+| tibia_link | 1 | 6 | - | 6 | +1 | 7 |
+| foot_tip | 1 | 6 | - | 6 | +1 | 7 |
+| body_segment | - | - | 6 | 6 | - | 6 |
+
+## Print Settings Reference
 
 ### PLA Light (leg parts - optimized for weight)
 ```
@@ -29,25 +84,7 @@ Speed: 60mm/s
 Temp: 210/60
 ```
 
-### PLA Standard (body plates, brackets)
-```
-Layer: 0.2mm
-Infill: 20%
-Walls: 3
-Speed: 60mm/s
-Temp: 210/60
-```
-
-### PETG Structural (load-bearing)
-```
-Layer: 0.2mm
-Infill: 40%
-Walls: 4
-Speed: 45mm/s
-Temp: 240/80
-```
-
-### TPU Flexible (wheels, feet)
+### TPU Flexible (feet)
 ```
 Layer: 0.2mm
 Infill: 20%
@@ -55,19 +92,3 @@ Walls: 3
 Speed: 25mm/s
 Temp: 230/50
 ```
-
-## Estimated Total Print Time by Project
-
-| Project | Parts | PLA | PETG | TPU | Total |
-|---------|-------|-----|------|-----|-------|
-| Hexapod | 25 | 12h | 5h | 2h | ~20h |
-| Sawppy | 50+ | 40h | 60h | 10h | ~110h |
-| Stair-Climber | 40 | 30h | 40h | 8h | ~80h |
-| ExoMy | 30 | 25h | 25h | 5h | ~55h |
-| **Total** | | | | | **~265h** |
-
-## Failed Prints Log
-
-| Date | Part | Reason | Fix |
-|------|------|--------|-----|
-| - | - | - | - |
