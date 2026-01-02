@@ -66,8 +66,8 @@ class PCA9685:
             return
 
         if MICROPYTHON:
-            # I2C0 on GP4 (SDA) and GP5 (SCL) - leaves GP0/GP1 free for UART
-            self.i2c = i2c or I2C(0, sda=Pin(4), scl=Pin(5), freq=400000)
+            # ESP32: I2C0 on GPIO21 (SDA) and GPIO22 (SCL)
+            self.i2c = i2c or I2C(0, sda=Pin(21), scl=Pin(22), freq=400000)
         else:
             bus_num = i2c if isinstance(i2c, int) else 1
             self.bus = smbus2.SMBus(bus_num)

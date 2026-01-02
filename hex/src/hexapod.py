@@ -1,11 +1,12 @@
 """
 Hexapod Robot Controller
-For Pi Pico (MicroPython) or Pi Zero (CPython)
+For ESP32 (MicroPython) or Pi Zero (CPython)
 
 Hardware:
 - 2x PCA9685 PWM drivers (I2C 0x40, 0x41)
-- 18x Tower Pro SG90 servos (all joints: coxa, femur, tibia)
-- 3S Li-Ion battery (11.1V) with 5V BEC
+- 12x SG90 servos (coxa, tibia joints)
+- 6x MG90S servos (femur joints - metal gear for torque)
+- 3S Li-Ion battery (11.1V) with dual 5V 5A UBEC
 """
 
 import json
@@ -152,7 +153,7 @@ class Hexapod:
         # Track leg positions (x, y, z) for each leg
         self.leg_positions = {}
         for leg in self.servo_map.keys():
-            self.leg_positions[leg] = (80, 0, -50)  # Default standing
+            self.leg_positions[leg] = (80, 0, -40)  # Default standing (40mm for MG90S)
 
     def _load_calibration(self, calibration_file):
         """Load calibration from JSON file."""
@@ -279,7 +280,7 @@ class Hexapod:
 
     def get_leg_position(self, leg):
         """Get current (x, y, z) position of leg."""
-        return self.leg_positions.get(leg, (80, 0, -50))
+        return self.leg_positions.get(leg, (80, 0, -40))
 
 
 def create_hexapod(simulate=False):

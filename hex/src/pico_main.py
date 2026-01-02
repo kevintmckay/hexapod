@@ -1,5 +1,12 @@
 """
-Hexapod Pico Controller (Real-Time)
+DEPRECATED: This file is for Pi Pico. Use esp32_main.py instead.
+
+The hexapod now uses ESP32 WROOM-32 as the main controller.
+This file is kept for reference only.
+
+---
+
+Hexapod Pico Controller (Real-Time) [DEPRECATED]
 
 Runs on Pi Pico W. Handles:
 - Servo control via PCA9685
